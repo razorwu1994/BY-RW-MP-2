@@ -23,7 +23,7 @@ def setupPlot():
     return fig, ax
 
 '''
-Make a patch for a single pology 
+Make a patch for a single pology
 '''
 def createPolygonPatch(polygon):
     verts = []
@@ -41,7 +41,7 @@ def createPolygonPatch(polygon):
     patch = patches.PathPatch(path, facecolor='gray', lw=1)
 
     return patch
-    
+
 '''
 Make a patch for the robot
 '''
@@ -61,25 +61,25 @@ def createPolygonPatchForRobot(polygon):
     patch = patches.PathPatch(path, facecolor='gray', lw=1)
 
     return patch
-    
+
 
 '''
-Render polygon obstacles  
+Render polygon obstacles
 '''
 def drawPolygons(polygons):
     fig, ax = setupPlot()
     for p in range(0, len(polygons)):
         patch = createPolygonPatch(polygons[p])
-        ax.add_patch(patch)    
+        ax.add_patch(patch)
     plt.show()
 
 if __name__ == "__main__":
-    
+
     # Retrive file name for input data
     if(len(sys.argv) < 2):
         print "Please provide inpu tfile: python visualize.py [env-file]"
         exit()
-    
+
     filename = sys.argv[1]
 
     # Read data and parse polygons
@@ -98,5 +98,3 @@ if __name__ == "__main__":
 
     # Draw the polygons
     drawPolygons(polygons)
-
-    
