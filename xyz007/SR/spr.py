@@ -66,6 +66,22 @@ def findReflexiveVertices(polygons):
         vertices.append(vertex[1])
     return vertices
 
+
+
+def getExtrapoledLine(p1,p2):
+    'Creates a line extrapoled in p1->p2 direction'
+    xDiff = p2[0]-p1[0]
+    yDiff = p2[1]-p1[1]
+    distance = math.sqrt(xDiff**2+yDiff**2)
+    extendLength=0.05
+    p1_plus = [p1[0]+(p2[0]-p1[0])/distance*extendLength,p1[1]+(p2[1]-p1[1])/distance*extendLength]
+    p1_minus = [p1[0]-(p2[0]-p1[0])/distance*extendLength,p1[1]-(p2[1]-p1[1])/distance*extendLength]
+    p2_plus = [p2[0]+(p2[0]-p1[0])/distance*extendLength,p2[1]+(p2[1]-p1[1])/distance*extendLength]
+    p2_minus = [p2[0]-(p2[0]-p1[0])/distance*extendLength,p2[1]-(p2[1]-p1[1])/distance*extendLength]
+    # print plus,minus
+    return p1_plus,p1_minus,p2_plus,p2_minus
+    #print p1,path.Path(np.array([p1,p2])).contains_point(p1),p2,path.Path(np.array([p1,p2])).contains_point(p2)
+    # return a,b
 '''
 Compute the roadmap graph
 '''
@@ -85,6 +101,49 @@ def computeSPRoadmap(polygons, reflexVertices):
     # {1: [[2, 5.95], [3, 4.72]], 2: [[1, 5.95], [5,3.52]], ... }
     #
     # The vertex labels used here should start from 1
+    obstaclesPath=[]
+    for polygon in polygons:
+        polygonArray = np.array(polygon)
+        polyPath = path.Path(polygonArray)
+        obstaclesPath.append(polyPath)
+    i=0
+    while i < reflexVertices.__len__():
+        V_A = reflexVertices[i]
+        for polygon in polygons:
+            try:
+                k = polygon.index(V_A)
+                V_A_OBIndex = polygons.index(polygon)
+                break
+            except ValueError:
+                continue
+        j=0
+        while j < reflexVertices.__len__():
+            if j!=i:#not connect with self
+                V_B = reflexVertices[j]
+                V_B_OBIndex = V_A_OBIndex
+                for polygon in polygons:
+                    try:
+                        k = polygon.index(V_B)
+                        V_B_OBIndex = polygons.index(polygon)
+                        break
+                    except ValueError:
+                        continue
+                a,b,c,d = getExtrapoledLine(V_A,V_B)
+                # midpoint = [(V_A[0]+V_B[0])/2.0,(V_A[1]+V_B[1])/2.0]
+                # print not obstaclesPath[V_B_OBIndex].contains_point(a),not obstaclesPath[V_B_OBIndex].contains_point(b)
+                F1=not obstaclesPath[V_A_OBIndex].contains_point(a)
+                F2=not obstaclesPath[V_A_OBIndex].contains_point(b)
+                F3=not obstaclesPath[V_B_OBIndex].contains_point(c)
+                F4=not obstaclesPath[V_B_OBIndex].contains_point(d)
+                F5=V_A_OBIndex==V_B_OBIndex
+                F6=abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==1
+                if F1 and F2 and F3 and F4 or F5 and F6:
+                    if F5 and F6:
+                        print "same poly"
+                    print "found line",[V_A,V_B],V_A_OBIndex,V_B_OBIndex
+            j+=1
+        i+=1
+
 
     return vertexMap, adjacencyListMap
 
