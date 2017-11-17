@@ -34,6 +34,7 @@ def ang(lineA, lineB, obtruct):
         return 360-(360-ret),lineA[0][0],lineA[0][1]
     else:
         return 360-ret,[lineA[0][0],lineA[0][1]]
+
 '''
 Report reflexive vertices
 '''
@@ -65,8 +66,6 @@ def findReflexiveVertices(polygons):
     for vertex in list(filter(lambda x: x[0] > 180, verticesGroup)):
         vertices.append(vertex[1])
     return vertices
-
-
 
 def getExtrapoledLine(p1,p2):
     'Creates a line extrapoled in p1->p2 direction'
