@@ -155,45 +155,47 @@ class Node:
     Represents a node in the graph
 
     Attr:
-        pos: coordinates (x, y) of this node in  C-space
-        parent: previously visited Cell before reaching current one, None by default
-        f: function value, equivalent to g+h
+        label: label of this node
+        parent: previously visited Node before reaching current one, None by default
+        f: total cost to reach this node from the start
     """
 
-    def __init__(self, pos):
+    def __init__(self, label):
         """
-        By default, set f = 20,000
+        By default, set f = 5,000
         """
-        self.pos = pos
+        self.label = label
         self.parent = None
-        self.f = 20000
+        self.f = 5000
 
     def __eq__(self, other):
         """
-        Compare two cells based on their f (priority) values
+        Two cells are equivalent if their labels are equivalent
         """
-        if not isinstance(other, Cell):
+        if not isinstance(other, Node):
             return False
 
-        if self.pos == other.pos:
+        if self.label == other.label:
             return True
         return False
 
     def __str__(self):
         """
-        Prints out the card with the format: <value> of <suit>
-        Jokers are just printed out as 'joker'
+        Prints out Node in the format (label, parent's label, f)
         """
-        t_type = self.convert_to_char()
-        return "(({0}, {1}), {2}, f={3}, g={4}, h={5})".format(self.pos[0], self.pos[1], t_type, self.f, self.g, self.h)
+        parent_str = 'None'
+        if self.parent_str is not None:
+            parent = '{}'.format(self.parent_str.label)
 
-def retrieve_path(start, goal, grid):
+        return "({0}, parent={1}, f={2})".format(self.label, parent_str, self.f)
+
+def retrieve_path(start, goal, adjListMap):
     """
     Find the path leading from start to goal by working backwards from the goal
 
     Parameters:
     start: (x, y) coordinates of the start position
-    goal: (x, y) coordaintes of goal position
+    goal: (x, y) coordinates of goal position
     grid: 160x120 array of Cells
 
     Returns:
