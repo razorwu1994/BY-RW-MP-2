@@ -308,9 +308,7 @@ def uniformCostSearch(adjListMap, start, goal):
 '''
 Augment roadmap to include start and goal
 '''
-
-
-def updateRoadmap(adjListMap, x1, y1, x2, y2):
+def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
     startLabel = 0
     goalLabel = -1
