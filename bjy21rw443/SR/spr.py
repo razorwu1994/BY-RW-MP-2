@@ -228,40 +228,6 @@ def retrieve_path(start, goal, nodes_dict):
     path.reverse()  # Reverse path so it starts at start and ends at goal
     return path
 
-
-""" Methods not necessary for now
-def get_neighbors(vertex_label, adjListMap):
-    \"""
-    Find the neighbors for the given vertex
-
-    Parameters:
-    vertex_label = target vertex's label
-    adjListMap = adjacency list of the graph
-
-    Returns: 1D array of labels of neighbors
-    \"""
-    neighbors = [neighbor[0] for neighbor in adjListMap[vertex_label]]
-    return neighbors
-
-def get_cost(s, neighbor, adjListMap):
-    \"""
-    Calculate cost to move from s to its neighbor.
-    Parameter:
-    s = label of the furthest vertex along the optimal path
-    neighbor = label of neighbor of s
-
-    Returns: cost to move from s to neighbor
-    \"""
-    edges = adjListMap[s]
-
-    for edge in edges:
-        if edge[0] == neighbor:
-            return edge[1]
-
-    raise ValueError('no such neighbor {} of s'.format(neighbor)) # No such neighbor of s
-"""
-
-
 def update_vertex(s, neighbor_node, cost, fringe):
     """
     Update values for a neighbor based on s
@@ -282,6 +248,7 @@ def update_vertex(s, neighbor_node, cost, fringe):
         if (neighbor_node.f, neighbor_node) in fringe:
             fringe.remove((neighbor_node.f, neighbor_node))  # Remove neighbor (reorganize base on new f)
 
+        neighbor_node.f = neighbor_node.g
         hq.heappush(fringe, (neighbor_node.f, neighbor_node))  # Insert neighbor back into fringe
 
 
@@ -311,15 +278,14 @@ def uniformCostSearch(adjListMap, start, goal):
     start_node.f = start_node.g
     start_node.parent = start
     fringe = []
-    hq.heappush(fringe, (
-    start_node.f, start_node))  # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
+    hq.heappush(fringe, (start_node.f, start_node))  # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
     closed = []  # closed := empty set
 
     while len(fringe) != 0:  # Checking that fringe is nonempty
         (f, s) = hq.heappop(fringe)
         if s.label == goal:
             path = retrieve_path(start, goal, nodes_dict)  # Get path from start to goal
-            pathLength = len(path)
+            pathLength = nodes_dict[goal].f
             return path, pathLength
         closed.append(s.label)
 
@@ -340,7 +306,6 @@ def uniformCostSearch(adjListMap, start, goal):
     pathLength = 0
     return path, pathLength
 
-
 '''
 Augment roadmap to include start and goal
 '''
@@ -360,8 +325,8 @@ def updateRoadmap(adjListMap, x1, y1, x2, y2):
 
     return startLabel, goalLabel, updatedALMap
 
-
 if __name__ == "__main__":
+    """
     # Test UCS based on lecture UCS graph
     # S = 0, A = 1, B = 2, C = 3, G = 4
     adjListMap = {0: [[1, 1], [2, 4]], 1: [[2, 2], [3, 5], [4, 12]], 2: [[3, 2]], 3: [[4, 3]], 4: []}
@@ -370,8 +335,8 @@ if __name__ == "__main__":
     path, path_length = uniformCostSearch(adjListMap, start, goal)
     print "Path: {}".format(path)
     print "Path Length: {}".format(path_length)
-
-    """ COMMENT OUT LATER----------------------------------------
+    """
+    
     # Retrive file name for input data
     if(len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
@@ -428,4 +393,3 @@ if __name__ == "__main__":
 
 
     # Extra visualization elements goes here
-    """
