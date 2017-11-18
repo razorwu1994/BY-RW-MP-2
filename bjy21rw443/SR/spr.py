@@ -149,6 +149,95 @@ def computeSPRoadmap(polygons, reflexVertices):
 '''
 Perform uniform cost search
 '''
+class Node:
+    """
+    Represents a node in the graph
+
+    Attr:
+        label: label of this node
+        parent: previously visited Node before reaching current one, None by default
+        f: total function cost
+        g: cost to reach this node from the start
+    """
+
+    def __init__(self, label):
+        """
+        By default, set f = 5,000
+        """
+        self.label = label
+        self.parent = None
+        self.g = 5000
+        self.f = self.g
+
+    def __eq__(self, other):
+        """
+        Two cells are equivalent if their labels are equivalent
+        """
+        if not isinstance(other, Node):
+            return False
+
+        if self.label == other.label:
+            return True
+        return False
+
+    def __str__(self):
+        """
+        Prints out Node in the format (label, parent's label, f)
+        """
+        parent_str = 'None'
+        if self.parent is not None:
+            parent = self.parent.label
+
+        return "({0}, parent={1}, f={2})".format(self.label, parent_str, self.f)
+
+
+def retrieve_path(start, goal, nodes_dict):
+    """
+    Find the path leading from start to goal by working backwards from the goal
+
+    Parameters:
+    start: label for the start vertex
+    goal: label for goal vertex
+    nodes_dict: dictionary with labels as keys and the corresponding vertex's node as values
+
+    Returns:
+    1D array of labels to follow from start to goal
+    """
+    curr_node = nodes_dict[goal]
+    path = [curr_node.label]  # Start at goal
+
+    while curr_node.label != start:
+        parent = curr_node.parent
+        path.append(parent.label)
+        curr_node = parent
+
+    path.reverse()  # Reverse path so it starts at start and ends at goal
+    return path
+
+def update_vertex(s, neighbor_node, cost, fringe):
+    """
+    Update values for a neighbor based on s
+
+    Parameters:
+    s = current Node
+    neighbor_node = Node of vertex next to s
+    cost = cost to move from s to neighbor
+    fringe = binary heap representing fringe
+    nodes_dict: dictionary with labels as keys and the corresponding vertex's node as values
+
+    Returns: None
+    """
+    total_cost = s.g + cost
+    if total_cost < neighbor_node.g:
+        neighbor_node.g = total_cost
+        neighbor_node.parent = s
+        if (neighbor_node.f, neighbor_node) in fringe:
+            fringe.remove((neighbor_node.f, neighbor_node))  # Remove neighbor (reorganize base on new f)
+
+        neighbor_node.f = neighbor_node.g
+        hq.heappush(fringe, (neighbor_node.f, neighbor_node))  # Insert neighbor back into fringe
+
+
 def uniformCostSearch(adjListMap, start, goal):
     path = []
     pathLength = 0
@@ -161,6 +250,46 @@ def uniformCostSearch(adjListMap, start, goal):
     # in which 23 would be the label for the start and 37 the
     # label for the goal.
 
+    # Create dictionary of {labels:nodes}
+    labels = adjListMap.keys()[:]
+    nodes = [Node(label) for label in labels]  # Create a node for every key
+
+    nodes_dict = {}  #
+    for node in nodes:
+        nodes_dict[node.label] = node
+
+    # Run search
+    start_node = nodes_dict[start]
+    start_node.g = 0
+    start_node.f = start_node.g
+    start_node.parent = start
+    fringe = []
+    hq.heappush(fringe, (start_node.f, start_node))  # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
+    closed = []  # closed := empty set
+
+    while len(fringe) != 0:  # Checking that fringe is nonempty
+        (f, s) = hq.heappop(fringe)
+        if s.label == goal:
+            path = retrieve_path(start, goal, nodes_dict)  # Get path from start to goal
+            pathLength = nodes_dict[goal].f
+            return path, pathLength
+        closed.append(s.label)
+
+        # Get neighbors and costs to move to that neighbor
+        edges = adjListMap[s.label]
+        neighbors = [edge[0] for edge in edges]  # Labels for neighbors of s
+        edge_costs = [edge[1] for edge in edges]  # Corresponding costs to move to the neighbor
+
+        for i in range(len(neighbors)):
+            neighbor = neighbors[i]
+            neighbor_node = nodes_dict[neighbor]
+            edge_cost = edge_costs[i]
+
+            if neighbor not in closed:
+                update_vertex(s, neighbor_node, edge_cost, fringe)
+
+    path = None
+    pathLength = 0
     return path, pathLength
 
 '''
