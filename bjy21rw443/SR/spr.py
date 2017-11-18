@@ -3,7 +3,7 @@ import math
 import numpy as np
 import matplotlib.path as path
 import heapq as hq
-
+import copy
 
 def dot(vA, vB):
     return vA[0] * vB[0] + vA[1] * vB[1]
@@ -161,7 +161,6 @@ def computeSPRoadmap(polygons, reflexVertices):
 '''
 Perform uniform cost search
 '''
-
 class Node:
     """
     Represents a node in the graph
@@ -308,6 +307,48 @@ def uniformCostSearch(adjListMap, start, goal):
 '''
 Augment roadmap to include start and goal
 '''
+def path_in_polygon(path, polygon):
+    """
+    Check if the given path is in the polygon or not
+
+    :param path: the target matplotlib.path.Path
+    :param polygon:
+    :return:
+    """
+
+def addToMap(point, label, polygons, vertexMap, adjListMap):
+    """
+    Add a given point to the vertexMap and adjListMap
+
+    Parameters:
+    :param point: point to add to the adjListMap
+    :param label: label for the given point
+    :param polygons: list of list of clockwise coordinates or a polygon
+    :param vertexMap: map of vertex labels to their coordinates
+    :param adjListMap: adjacency list for the graph
+
+    :return: updated adjListMap
+    """
+    adjList = copy.deepcopy(adjListMap)
+
+    # Find closest neighboring vertex to the point that has a valid line between them
+    # Find distance to other points
+    dist_map = [] # List of (label, distance) tuples
+    for label in vertexMap.keys():
+        x1 = point[0]
+        y1 = point[1]
+        x2 = vertexMap[label][0]
+        y2 = vertexMap[label][1]
+        dist = math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2))
+        dist_map.append((label, dist))
+
+    dist_map.sort(key=lambda x: x[1]) # label with shortest distance comes first
+
+    # Try to add edge between given point and the closest neighbor
+    sorted_labels = [x[0] for x in dist_map]
+    for neighbor in sorted_labels:
+        sample_path = path.Path([point, ])
+
 def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
     startLabel = 0
@@ -320,11 +361,18 @@ def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     # roadmap. Note that what you do here is similar to
     # when you construct the roadmap.
 
+    start = (x1, y1)
+    goal = (x2, y2)
+    updatedALMap = addToMap(start, startLabel, polygons, vertexMap, adjListMap)
+    updatedALMap = addToMap(goal, goalLabel, polygons, vertexMap, updatedALMap)
+
     return startLabel, goalLabel, updatedALMap
 
+
 if __name__ == "__main__":
-    # Retrieve file name for input data
-    if(len(sys.argv) < 6):
+
+    # Retrive file name for input data
+    if (len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
         exit()
 
@@ -366,7 +414,7 @@ if __name__ == "__main__":
     print ""
 
     # Update roadmap
-    start, goal, updatedALMap = updateRoadmap(adjListMap, x1, y1, x2, y2)
+    start, goal, updatedALMap = updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2)
     print "Updated roadmap:"
     print str(updatedALMap)
     print ""
