@@ -302,7 +302,7 @@ def uniformCostSearch(adjListMap, start, goal):
                 update_vertex(s, neighbor_node, edge_cost, fringe)
 
     path = None
-    pathLength = 0
+    pathLength = -1
     return path, pathLength
 
 '''
@@ -325,17 +325,16 @@ def updateRoadmap(adjListMap, x1, y1, x2, y2):
     return startLabel, goalLabel, updatedALMap
 
 if __name__ == "__main__":
-    """
     # Test UCS based on lecture UCS graph
     # S = 0, A = 1, B = 2, C = 3, G = 4
     adjListMap = {0: [[1, 1], [2, 4]], 1: [[2, 2], [3, 5], [4, 12]], 2: [[3, 2]], 3: [[4, 3]], 4: []}
-    start = 0
-    goal = 4
+    start = 4
+    goal = 1
     path, path_length = uniformCostSearch(adjListMap, start, goal)
     print "Path: {}".format(path)
     print "Path Length: {}".format(path_length)
+
     """
-    
     # Retrive file name for input data
     if(len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
@@ -392,3 +391,4 @@ if __name__ == "__main__":
 
 
     # Extra visualization elements goes here
+    """
