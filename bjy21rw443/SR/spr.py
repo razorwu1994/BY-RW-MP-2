@@ -157,7 +157,8 @@ class Node:
     Attr:
         label: label of this node
         parent: previously visited Node before reaching current one, None by default
-        f: total cost to reach this node from the start
+        f: total function cost
+        g: cost to reach this node from the start
     """
 
     def __init__(self, label):
@@ -166,7 +167,8 @@ class Node:
         """
         self.label = label
         self.parent = None
-        self.f = 5000
+        self.g = 5000
+        self.f = self.g
 
     def __eq__(self, other):
         """
@@ -185,129 +187,70 @@ class Node:
         """
         parent_str = 'None'
         if self.parent_str is not None:
-            parent = '{}'.format(self.parent_str.label)
+            parent = self.parent_str.label
 
         return "({0}, parent={1}, f={2})".format(self.label, parent_str, self.f)
 
-def retrieve_path(start, goal, adjListMap):
+def retrieve_path(start, goal, nodes_dict):
     """
     Find the path leading from start to goal by working backwards from the goal
 
     Parameters:
-    start: (x, y) coordinates of the start position
-    goal: (x, y) coordinates of goal position
-    grid: 160x120 array of Cells
+    start: label for the start vertex
+    goal: label for goal vertex
+    nodes_dict: dictionary with labels as keys and the corresponding vertex's node as values
 
     Returns:
-    1D array of (x, y) coordinates to follow from start to goal
+    1D array of labels to follow from start to goal
     """
-    curr_cell = grid[goal[0]][goal[1]]
-    path = [curr_cell.pos]  # Start at goal
+    curr_node = nodes_dict[goal]
+    path = [curr_node.label]  # Start at goal
 
-    while curr_cell.pos != start:
-        parent = curr_cell.parent
-        path.append(parent.pos)
-        curr_cell = parent
+    while curr_node.label != start:
+        parent = curr_node.parent
+        path.append(parent.label)
+        curr_node = parent
 
     path.reverse()  # Reverse path so it starts at start and ends at goal
     return path
 
-def get_neighbors(cell, grid):
+def get_neighbors(vertex_label, adjListMap):
     """
-    Find the valid neighbors for the given cell.
-    Check 8-neighbors around the cell, ignore blocked cells and cells outside of the boundary.
+    Find the neighbors for the given vertex
 
     Parameters:
-    cell = target Cell
-    grid = 160x120 grid of Cells
+    vertex_label = target vertex's label
+    adjListMap = adjacency list of the graph
 
-    Returns: 1D array of Cells
+    Returns: 1D array of labels of neighbors
     """
-    # Find 8 neighboring positions
-    pos = cell.pos
+    neighbors = [neighbor[0] for neighbor in adjListMap[vertex_label]]
+    return neighbors
 
-    top_left_pos = (pos[0] - 1, pos[1] + 1)
-    top_pos = (pos[0], pos[1] + 1)
-    top_right_pos = (pos[0] + 1, pos[1] + 1)
-    right_pos = (pos[0] + 1, pos[1])
-    bottom_right_pos = (pos[0] + 1, pos[1] - 1)
-    bottom_pos = (pos[0], pos[1] - 1)
-    bottom_left_pos = (pos[0] - 1, pos[1] - 1)
-    left_pos = (pos[0] - 1, pos[1])
-
-    possible_neighbors = [top_left_pos, top_pos, top_right_pos, right_pos, bottom_right_pos, bottom_pos,
-                          bottom_left_pos, left_pos]
-
-    # Filter out invalid neighbors (out of bounds or blocked cell)
-    possible_neighbors = [pos for pos in possible_neighbors if
-                          pos[0] >= 0 and pos[0] < 120 and pos[1] >= 0 and pos[1] < 160]
-
-    for neighbor in possible_neighbors:
-        if grid[neighbor[0]][neighbor[1]].terrain_type == BLOCKED:
-            possible_neighbors.remove(neighbor)
-
-    """ Testing
-    print "Neighbors:"
-    for neighbor in possible_neighbors:
-        print neighbor
-    print ""
+def get_cost(s, neighbor, adjListMap):
     """
-
-    valid_neighbors = [grid[pos[0]][pos[1]] for pos in possible_neighbors]
-    return valid_neighbors
-
-def get_cost(s, neighbor):
-    """
-    Calculate cost to move from s to its neighboring cell.
-        - Unblocked cells cost 1 to traverse along an edge
-        - Hard-to-traverse cells cost 2 to traverse along an edge
-        - Moving from highway to highway cuts overall cost by a factor of 4
+    Calculate cost to move from s to its neighbor.
     Parameter:
-    s = Cell for the furthest cell on the optimal path
-    neighbor = Cell for a neighbor of s
+    s = label of the furthest vertex along the optimal path
+    neighbor = label of neighbor of s
 
     Returns: cost to move from s to neighbor
     """
-    # Find Euclidean distance
-    (x1, y1) = s.pos
-    (x2, y2) = neighbor.pos
-    distance = math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
+    edges = adjListMap[s]
 
-    # Factor in terrain types
-    temp_cells = [s, neighbor]
-    temp_dists = [distance / 2, distance / 2]
+    for edge in edges:
+        if edge[0] == neighbor:
+            return edge[1]
 
-    for i in range(len(temp_cells)):
-        if temp_cells[i].terrain_type == ROUGH:
-            temp_dists[i] *= 2  # Rough terrain costs 2x to move across
-
-    distance = sum(temp_dists)
-
-    # Check if highway cuts cost further (4x)
-    if s.has_highway is True and neighbor.has_highway is True:
-        distance /= 4
-
-    return distance
-
-def get_heuristic(cell, grid):
-    """
-    Calculate the heursitic for a cell
-
-    Parameters:
-    cell = target cell
-    grid = 160x120 grid
-
-    Returns: h value for the cell
-    """
-    return 0  # For UCS use 0, replace with something else for A* and weighted A*
+    raise ValueError('no such neighbor {} of s'.format(neighbor)) # No such neighbor of s
 
 def update_vertex(s, neighbor, fringe):
     """
     Update values for a neighbor based on s
 
     Parameters:
-    s = a Cell
-    neighbor = a Cell next to s
+    s = current Node
+    neighbor = Node next to s
 
     Returns: None
     """
@@ -316,9 +259,8 @@ def update_vertex(s, neighbor, fringe):
         neighbor.g = total_cost
         neighbor.parent = s
         if (neighbor.f, neighbor) in fringe:
-            fringe.remove((neighbor.f, neighbor))  # Possible optimization opportunity?
+            fringe.remove((neighbor.f, neighbor))  # Remove neighbor (reorganize base on new f)
 
-        neighbor.f = neighbor.g + neighbor.h  # Update neighbor's f-value
         hq.heappush(fringe, (neighbor.f, neighbor))  # Insert neighbor back into fringe
 
 def uniformCostSearch(adjListMap, start, goal):
@@ -333,25 +275,32 @@ def uniformCostSearch(adjListMap, start, goal):
     # in which 23 would be the label for the start and 37 the
     # label for the goal.
 
+    # Create dictionary of {labels:nodes}
+    nodes = [Node(label) for label in adjListMap.keys] # Create a node for every key
+
+    nodes_dict = {} #
+    for node in nodes:
+        nodes_dict[node.label] = node
+
     # Run search
-    start_cell = grid[start[0]][start[1]]
-    start_cell.g = 0
-    start_cell.f = start_cell.g + start_cell.h
-    start_cell.parent = start
+    start_node = nodes_dict[start]
+    start_node.g = 0
+    start_node.f = start_node.g
+    start_node.parent = start
     fringe = []
-    hq.heappush(fringe, (start_cell.f, start_cell)) # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
+    hq.heappush(fringe, (start_node.f, start_node)) # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
     closed = [] # closed := empty set
 
     while len(fringe) != 0: # Checking that fringe is nonempty
         (f, s) = hq.heappop(fringe)
-        if s.pos == goal:
-            path = retrieve_path(start, goal, grid) # Get path from start to goal
+        if s.label == goal:
+            path = retrieve_path(start, goal, nodes_dict) # Get path from start to goal
             pathLength = len(path)
             return path, pathLength
-        closed.append(s.pos)
+        closed.append(s.label)
         neighbors = get_neighbors(s, grid)
         for neighbor in neighbors:
-            if neighbor.pos not in closed: # Possible optimization opportunity
+            if neighbor.label not in closed: # Possible optimization opportunity
                 if (neighbor.f, neighbor) not in fringe:
                     neighbor.g = 20000 # 20,000 = infinity
                     neighbor.parent = None
@@ -361,7 +310,7 @@ def uniformCostSearch(adjListMap, start, goal):
     return path, pathLength
 
 '''
-Agument roadmap to include start and goal
+Augment roadmap to include start and goal
 '''
 def updateRoadmap(adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
@@ -378,7 +327,9 @@ def updateRoadmap(adjListMap, x1, y1, x2, y2):
     return startLabel, goalLabel, updatedALMap
 
 if __name__ == "__main__":
+    # Test
 
+    """ COMMENT OUT LATER----------------------------------------
     # Retrive file name for input data
     if(len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
@@ -435,3 +386,4 @@ if __name__ == "__main__":
 
 
     # Extra visualization elements goes here
+    """
