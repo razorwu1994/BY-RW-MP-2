@@ -4,87 +4,98 @@ import numpy as np
 import matplotlib.path as path
 import heapq as hq
 
+
 def dot(vA, vB):
-    return vA[0]*vB[0]+vA[1]*vB[1]
+    return vA[0] * vB[0] + vA[1] * vB[1]
+
+
 def ang(lineA, lineB, obtruct):
     # Get nicer vector form
-    vA = [(lineA[0][0]-lineA[1][0]), (lineA[0][1]-lineA[1][1])]
-    vB = [(lineB[0][0]-lineB[1][0]), (lineB[0][1]-lineB[1][1])]
+    vA = [(lineA[0][0] - lineA[1][0]), (lineA[0][1] - lineA[1][1])]
+    vB = [(lineB[0][0] - lineB[1][0]), (lineB[0][1] - lineB[1][1])]
 
-    angA = math.atan2(vA[0],vA[1])
-    angB = math.atan2(vB[0],vB[1])
+    angA = math.atan2(vA[0], vA[1])
+    angB = math.atan2(vB[0], vB[1])
 
     # Get dot prod
     dot_prod = dot(vA, vB)
     # Get magnitudes
-    magA = dot(vA, vA)**0.5
-    magB = dot(vB, vB)**0.5
+    magA = dot(vA, vA) ** 0.5
+    magB = dot(vB, vB) ** 0.5
     # Get cosine value
-    cos_ = dot_prod/magA/magB
+    cos_ = dot_prod / magA / magB
     # Get angle in radians and then convert to degrees
-    angle = math.acos(dot_prod/magB/magA)
+    angle = math.acos(dot_prod / magB / magA)
     # Basically doing angle <- angle mod 360
-    ang_deg = math.degrees(angle)%360
+    ang_deg = math.degrees(angle) % 360
 
-    if ang_deg-180>=0:
+    if ang_deg - 180 >= 0:
         # As in if statement
         ret = 360 - ang_deg
     else:
         ret = ang_deg
     if obtruct:
-        return 360-(360-ret),lineA[0][0],lineA[0][1]
+        return 360 - (360 - ret), lineA[0][0], lineA[0][1]
     else:
-        return 360-ret,[lineA[0][0],lineA[0][1]]
+        return 360 - ret, [lineA[0][0], lineA[0][1]]
+
 
 '''
 Report reflexive vertices
 '''
+
+
 def findReflexiveVertices(polygons):
-    vertices=[]
+    vertices = []
     # Your code goes here
     # You should return a list of (x,y) values as lists, i.e.
     # vertices = [[x1,y1],[x2,y2],...]
-    verticesGroup=[]
+    verticesGroup = []
     for polygon in polygons:
-        i=0
+        i = 0
         polygonArray = np.array(polygon)
         polyPath = path.Path(polygonArray)
         while i < len(polygon):
-            if i+1==len(polygon):
-                line_1=[polygon[0],polygon[i]]
+            if i + 1 == len(polygon):
+                line_1 = [polygon[0], polygon[i]]
             else:
-                line_1=[polygon[i+1],polygon[i]]
-            if i+2==len(polygon):
-                line_2=[polygon[i+1],polygon[0]]
-            elif i+1==len(polygon):
-                line_2=[polygon[0],polygon[1]]
+                line_1 = [polygon[i + 1], polygon[i]]
+            if i + 2 == len(polygon):
+                line_2 = [polygon[i + 1], polygon[0]]
+            elif i + 1 == len(polygon):
+                line_2 = [polygon[0], polygon[1]]
             else:
-                line_2=[polygon[i+1],polygon[i+2]]
-            midpoint = [(line_2[1][0]+line_1[1][0])/2.0,(line_2[1][1]+line_1[1][1])/2.0]
-            i+=1
-            verticesGroup.append(ang(line_1,line_2,not polyPath.contains_point(midpoint)))
+                line_2 = [polygon[i + 1], polygon[i + 2]]
+            midpoint = [(line_2[1][0] + line_1[1][0]) / 2.0, (line_2[1][1] + line_1[1][1]) / 2.0]
+            i += 1
+            verticesGroup.append(ang(line_1, line_2, not polyPath.contains_point(midpoint)))
 
     for vertex in list(filter(lambda x: x[0] > 180, verticesGroup)):
         vertices.append(vertex[1])
     return vertices
 
-def getExtrapoledLine(p1,p2):
+
+def getExtrapoledLine(p1, p2):
     'Creates a line extrapoled in p1->p2 direction'
-    xDiff = p2[0]-p1[0]
-    yDiff = p2[1]-p1[1]
-    distance = math.sqrt(xDiff**2+yDiff**2)
-    extendLength=0.05
-    p1_plus = [p1[0]+(p2[0]-p1[0])/distance*extendLength,p1[1]+(p2[1]-p1[1])/distance*extendLength]
-    p1_minus = [p1[0]-(p2[0]-p1[0])/distance*extendLength,p1[1]-(p2[1]-p1[1])/distance*extendLength]
-    p2_plus = [p2[0]+(p2[0]-p1[0])/distance*extendLength,p2[1]+(p2[1]-p1[1])/distance*extendLength]
-    p2_minus = [p2[0]-(p2[0]-p1[0])/distance*extendLength,p2[1]-(p2[1]-p1[1])/distance*extendLength]
+    xDiff = p2[0] - p1[0]
+    yDiff = p2[1] - p1[1]
+    distance = math.sqrt(xDiff ** 2 + yDiff ** 2)
+    extendLength = 0.05
+    p1_plus = [p1[0] + (p2[0] - p1[0]) / distance * extendLength, p1[1] + (p2[1] - p1[1]) / distance * extendLength]
+    p1_minus = [p1[0] - (p2[0] - p1[0]) / distance * extendLength, p1[1] - (p2[1] - p1[1]) / distance * extendLength]
+    p2_plus = [p2[0] + (p2[0] - p1[0]) / distance * extendLength, p2[1] + (p2[1] - p1[1]) / distance * extendLength]
+    p2_minus = [p2[0] - (p2[0] - p1[0]) / distance * extendLength, p2[1] - (p2[1] - p1[1]) / distance * extendLength]
     # print plus,minus
-    return p1_plus,p1_minus,p2_plus,p2_minus
-    #print p1,path.Path(np.array([p1,p2])).contains_point(p1),p2,path.Path(np.array([p1,p2])).contains_point(p2)
+    return p1_plus, p1_minus, p2_plus, p2_minus
+    # print p1,path.Path(np.array([p1,p2])).contains_point(p1),p2,path.Path(np.array([p1,p2])).contains_point(p2)
     # return a,b
+
+
 '''
 Compute the roadmap graph
 '''
+
+
 def computeSPRoadmap(polygons, reflexVertices):
     vertexMap = dict()
     adjacencyListMap = dict()
@@ -101,12 +112,12 @@ def computeSPRoadmap(polygons, reflexVertices):
     # {1: [[2, 5.95], [3, 4.72]], 2: [[1, 5.95], [5,3.52]], ... }
     #
     # The vertex labels used here should start from 1
-    obstaclesPath=[]
+    obstaclesPath = []
     for polygon in polygons:
         polygonArray = np.array(polygon)
         polyPath = path.Path(polygonArray)
         obstaclesPath.append(polyPath)
-    i=0
+    i = 0
     while i < reflexVertices.__len__():
         V_A = reflexVertices[i]
         for polygon in polygons:
@@ -116,9 +127,9 @@ def computeSPRoadmap(polygons, reflexVertices):
                 break
             except ValueError:
                 continue
-        j=0
+        j = 0
         while j < reflexVertices.__len__():
-            if j!=i:#not connect with self
+            if j != i:  # not connect with self
                 V_B = reflexVertices[j]
                 V_B_OBIndex = V_A_OBIndex
                 for polygon in polygons:
@@ -128,28 +139,30 @@ def computeSPRoadmap(polygons, reflexVertices):
                         break
                     except ValueError:
                         continue
-                a,b,c,d = getExtrapoledLine(V_A,V_B)
+                a, b, c, d = getExtrapoledLine(V_A, V_B)
                 # midpoint = [(V_A[0]+V_B[0])/2.0,(V_A[1]+V_B[1])/2.0]
                 # print not obstaclesPath[V_B_OBIndex].contains_point(a),not obstaclesPath[V_B_OBIndex].contains_point(b)
-                F1=not obstaclesPath[V_A_OBIndex].contains_point(a)
-                F2=not obstaclesPath[V_A_OBIndex].contains_point(b)
-                F3=not obstaclesPath[V_B_OBIndex].contains_point(c)
-                F4=not obstaclesPath[V_B_OBIndex].contains_point(d)
-                F5=V_A_OBIndex==V_B_OBIndex
-                F6=abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==1
+                F1 = not obstaclesPath[V_A_OBIndex].contains_point(a)
+                F2 = not obstaclesPath[V_A_OBIndex].contains_point(b)
+                F3 = not obstaclesPath[V_B_OBIndex].contains_point(c)
+                F4 = not obstaclesPath[V_B_OBIndex].contains_point(d)
+                F5 = V_A_OBIndex == V_B_OBIndex
+                F6 = abs(polygons[V_A_OBIndex].index(V_A) - polygons[V_B_OBIndex].index(V_B)) == 1
                 if F1 and F2 and F3 and F4 or F5 and F6:
                     if F5 and F6:
                         print "same poly"
-                    print "found line",[V_A,V_B],V_A_OBIndex,V_B_OBIndex
-            j+=1
-        i+=1
-
+                    print "found line", [V_A, V_B], V_A_OBIndex, V_B_OBIndex
+            j += 1
+        i += 1
 
     return vertexMap, adjacencyListMap
+
 
 '''
 Perform uniform cost search
 '''
+
+
 class Node:
     """
     Represents a node in the graph
@@ -186,10 +199,11 @@ class Node:
         Prints out Node in the format (label, parent's label, f)
         """
         parent_str = 'None'
-        if self.parent_str is not None:
-            parent = self.parent_str.label
+        if self.parent is not None:
+            parent = self.parent.label
 
         return "({0}, parent={1}, f={2})".format(self.label, parent_str, self.f)
+
 
 def retrieve_path(start, goal, nodes_dict):
     """
@@ -214,8 +228,10 @@ def retrieve_path(start, goal, nodes_dict):
     path.reverse()  # Reverse path so it starts at start and ends at goal
     return path
 
+
+""" Methods not necessary for now
 def get_neighbors(vertex_label, adjListMap):
-    """
+    \"""
     Find the neighbors for the given vertex
 
     Parameters:
@@ -223,19 +239,19 @@ def get_neighbors(vertex_label, adjListMap):
     adjListMap = adjacency list of the graph
 
     Returns: 1D array of labels of neighbors
-    """
+    \"""
     neighbors = [neighbor[0] for neighbor in adjListMap[vertex_label]]
     return neighbors
 
 def get_cost(s, neighbor, adjListMap):
-    """
+    \"""
     Calculate cost to move from s to its neighbor.
     Parameter:
     s = label of the furthest vertex along the optimal path
     neighbor = label of neighbor of s
 
     Returns: cost to move from s to neighbor
-    """
+    \"""
     edges = adjListMap[s]
 
     for edge in edges:
@@ -243,25 +259,31 @@ def get_cost(s, neighbor, adjListMap):
             return edge[1]
 
     raise ValueError('no such neighbor {} of s'.format(neighbor)) # No such neighbor of s
+"""
 
-def update_vertex(s, neighbor, fringe):
+
+def update_vertex(s, neighbor_node, cost, fringe):
     """
     Update values for a neighbor based on s
 
     Parameters:
     s = current Node
-    neighbor = Node next to s
+    neighbor_node = Node of vertex next to s
+    cost = cost to move from s to neighbor
+    fringe = binary heap representing fringe
+    nodes_dict: dictionary with labels as keys and the corresponding vertex's node as values
 
     Returns: None
     """
-    total_cost = s.g + get_cost(s, neighbor)
-    if total_cost < neighbor.g:
-        neighbor.g = total_cost
-        neighbor.parent = s
-        if (neighbor.f, neighbor) in fringe:
-            fringe.remove((neighbor.f, neighbor))  # Remove neighbor (reorganize base on new f)
+    total_cost = s.g + cost
+    if total_cost < neighbor_node.g:
+        neighbor_node.g = total_cost
+        neighbor_node.parent = s
+        if (neighbor_node.f, neighbor_node) in fringe:
+            fringe.remove((neighbor_node.f, neighbor_node))  # Remove neighbor (reorganize base on new f)
 
-        hq.heappush(fringe, (neighbor.f, neighbor))  # Insert neighbor back into fringe
+        hq.heappush(fringe, (neighbor_node.f, neighbor_node))  # Insert neighbor back into fringe
+
 
 def uniformCostSearch(adjListMap, start, goal):
     path = []
@@ -276,9 +298,10 @@ def uniformCostSearch(adjListMap, start, goal):
     # label for the goal.
 
     # Create dictionary of {labels:nodes}
-    nodes = [Node(label) for label in adjListMap.keys] # Create a node for every key
+    labels = adjListMap.keys()[:]
+    nodes = [Node(label) for label in labels]  # Create a node for every key
 
-    nodes_dict = {} #
+    nodes_dict = {}  #
     for node in nodes:
         nodes_dict[node.label] = node
 
@@ -288,30 +311,41 @@ def uniformCostSearch(adjListMap, start, goal):
     start_node.f = start_node.g
     start_node.parent = start
     fringe = []
-    hq.heappush(fringe, (start_node.f, start_node)) # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
-    closed = [] # closed := empty set
+    hq.heappush(fringe, (
+    start_node.f, start_node))  # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
+    closed = []  # closed := empty set
 
-    while len(fringe) != 0: # Checking that fringe is nonempty
+    while len(fringe) != 0:  # Checking that fringe is nonempty
         (f, s) = hq.heappop(fringe)
         if s.label == goal:
-            path = retrieve_path(start, goal, nodes_dict) # Get path from start to goal
+            path = retrieve_path(start, goal, nodes_dict)  # Get path from start to goal
             pathLength = len(path)
             return path, pathLength
         closed.append(s.label)
-        neighbors = get_neighbors(s, grid)
-        for neighbor in neighbors:
-            if neighbor.label not in closed: # Possible optimization opportunity
-                if (neighbor.f, neighbor) not in fringe:
-                    neighbor.g = 20000 # 20,000 = infinity
-                    neighbor.parent = None
-                update_vertex(s, neighbor, fringe)
+
+        # Get neighbors and costs to move to that neighbor
+        edges = adjListMap[s.label]
+        neighbors = [edge[0] for edge in edges]  # Labels for neighbors of s
+        edge_costs = [edge[1] for edge in edges]  # Corresponding costs to move to the neighbor
+
+        for i in range(len(neighbors)):
+            neighbor = neighbors[i]
+            neighbor_node = nodes_dict[neighbor]
+            edge_cost = edge_costs[i]
+
+            if neighbor not in closed:
+                update_vertex(s, neighbor_node, edge_cost, fringe)
+
     path = None
     pathLength = 0
     return path, pathLength
 
+
 '''
 Augment roadmap to include start and goal
 '''
+
+
 def updateRoadmap(adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
     startLabel = 0
@@ -326,8 +360,16 @@ def updateRoadmap(adjListMap, x1, y1, x2, y2):
 
     return startLabel, goalLabel, updatedALMap
 
+
 if __name__ == "__main__":
-    # Test
+    # Test UCS based on lecture UCS graph
+    # S = 0, A = 1, B = 2, C = 3, G = 4
+    adjListMap = {0: [[1, 1], [2, 4]], 1: [[2, 2], [3, 5], [4, 12]], 2: [[3, 2]], 3: [[4, 3]], 4: []}
+    start = 0
+    goal = 4
+    path, path_length = uniformCostSearch(adjListMap, start, goal)
+    print "Path: {}".format(path)
+    print "Path Length: {}".format(path_length)
 
     """ COMMENT OUT LATER----------------------------------------
     # Retrive file name for input data
