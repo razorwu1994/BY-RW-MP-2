@@ -119,6 +119,10 @@ def computeSPRoadmap(polygons, reflexVertices):
     # {1: [[2, 5.95], [3, 4.72]], 2: [[1, 5.95], [5,3.52]], ... }
     #
     # The vertex labels used here should start from 1
+    i=0
+    while i < reflexVertices.__len__():
+        vertexMap[i+1]=reflexVertices[i]
+        i+=1
     edgeGroup=[]
     for polygon in polygons:
         i=0
@@ -145,6 +149,7 @@ def computeSPRoadmap(polygons, reflexVertices):
             except ValueError:
                 continue
         j = 0
+        roadmapArray=[]
         while j < reflexVertices.__len__():
             if j != i:  # not connect with self
                 V_B = reflexVertices[j]
@@ -165,18 +170,22 @@ def computeSPRoadmap(polygons, reflexVertices):
                 F6=abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==1
                 if F1 and F2 and F3 and F4 or F5 and F6:
                     F7 = False
-                    if F5 and F6:
-                        print "same poly"
-                    else:
-                        if F1 and F2 and F3 and F4:
+                    if F1 and F2 and F3 and F4:
                                 for edge in edgeGroup:
                                     B2 = edge[0] == V_A or edge[1] == V_B or edge[1] == V_A or edge[0] == V_B
                                     if not B2:
                                         B1 = intersect(V_A,V_B,edge[0],edge[1])
                                         F7= F7 or B1
                     if not F7:
-                        print "found line",[V_A,V_B],V_A_OBIndex,V_B_OBIndex
+
+                        for key in vertexMap:
+                            if vertexMap[key] == V_B:
+                                tmpkey = key
+                        distance = round(math.sqrt((V_A[0]-V_B[0])**2+(V_A[1]-V_B[1])**2),2)
+                        roadmapArray.append([tmpkey,distance])
+                        # print "found line",[V_A,V_B],V_A_OBIndex,V_B_OBIndex,roadmapArray
             j+=1
+        adjacencyListMap[i+1]=roadmapArray
         i+=1
 
 
