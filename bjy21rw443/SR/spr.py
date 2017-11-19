@@ -43,8 +43,6 @@ def ang(lineA, lineB, obtruct):
 '''
 Report reflexive vertices
 '''
-
-
 def findReflexiveVertices(polygons):
     vertices = []
     # Your code goes here
@@ -94,8 +92,6 @@ def getExtrapoledLine(p1, p2):
 '''
 Compute the roadmap graph
 '''
-
-
 def computeSPRoadmap(polygons, reflexVertices):
     vertexMap = dict()
     adjacencyListMap = dict()
@@ -307,14 +303,22 @@ def uniformCostSearch(adjListMap, start, goal):
 '''
 Augment roadmap to include start and goal
 '''
-def path_in_polygon(path, polygon):
+def isVisible(neighbor, point, polygons):
     """
-    Check if the given path is in the polygon or not
+    Check if neighbor is visible from point based on the given polygons
 
-    :param path: the target matplotlib.path.Path
-    :param polygon:
-    :return:
+    :param neighbor: see if this neighbor is visible from point
+    :param point: point to check visibility from
+    :param polygons: list of arrays which represent coordinates in clockwise direction forming polygons
+    :return: True if neighbor is visible from point, False otherwise
     """
+    test_segment = path.Path([neighbor, point]) # See if this segment intersects boundaries of any polygon
+
+    for polygon in polygons:
+        polygon_path = path.Path(polygon)
+        if test_segment.intersects_path(polygon_path):
+            return False
+    return True
 
 def addToMap(point, label, polygons, vertexMap, adjListMap):
     """
@@ -329,25 +333,23 @@ def addToMap(point, label, polygons, vertexMap, adjListMap):
 
     :return: updated adjListMap
     """
-    adjList = copy.deepcopy(adjListMap)
+    newAdjListMap = copy.deepcopy(adjListMap)
+    point_adj_list = []
+    x1 = point[0]
+    y1 = point[1]
 
-    # Find closest neighboring vertex to the point that has a valid line between them
-    # Find distance to other points
-    dist_map = [] # List of (label, distance) tuples
-    for label in vertexMap.keys():
-        x1 = point[0]
-        y1 = point[1]
-        x2 = vertexMap[label][0]
-        y2 = vertexMap[label][1]
-        dist = math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2))
-        dist_map.append((label, dist))
+    # Add edges between given point and other visible points
+    for vertex_label in newAdjListMap.keys():
+        vertex = vertexMap[vertex_label]
+        if isVisible(vertex, point, polygons):
+            x2 = vertex[0]
+            y2 = vertex[1]
+            distance = math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
+            newAdjListMap[vertex_label].append(label, distance)
+            point_adj_list.append([vertex_label, distance])
 
-    dist_map.sort(key=lambda x: x[1]) # label with shortest distance comes first
-
-    # Try to add edge between given point and the closest neighbor
-    sorted_labels = [x[0] for x in dist_map]
-    for neighbor in sorted_labels:
-        sample_path = path.Path([point, ])
+    newAdjListMap[label] = point_adj_list
+    return newAdjListMap
 
 def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
