@@ -391,7 +391,7 @@ if __name__ == "__main__":
     print ""
 
     # Update roadmap
-    start, goal, updatedALMap = updateRoadmap(adjListMap, x1, y1, x2, y2)
+    start, goal, updatedALMap = updateRoadmap(polygons,vertexMap,adjListMap, x1, y1, x2, y2)
     print "Updated roadmap:"
     print str(updatedALMap)
     print ""
