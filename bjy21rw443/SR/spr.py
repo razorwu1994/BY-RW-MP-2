@@ -377,7 +377,7 @@ def isVisible(neighbor, point, polygons):
             return False
     return True
 
-def addToMap(point, label, polygons, vertexMap, adjListMap):
+def addToMaps(point, label, polygons, vertexMap, adjListMap):
     """
     Add a given point to the vertexMap and adjListMap
 
@@ -402,11 +402,15 @@ def addToMap(point, label, polygons, vertexMap, adjListMap):
             x2 = vertex[0]
             y2 = vertex[1]
             distance = math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
-            newAdjListMap[vertex_label].append(label, distance)
+            newAdjListMap[vertex_label].append([label, distance])
             point_adj_list.append([vertex_label, distance])
 
     newAdjListMap[label] = point_adj_list
-    return newAdjListMap
+
+    # Add point to vertex map
+    newVertexMap = copy.deepcopy(vertexMap)
+    newVertexMap[label] = point
+    return newVertexMap, newAdjListMap
 
 def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
@@ -420,10 +424,12 @@ def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     # roadmap. Note that what you do here is similar to
     # when you construct the roadmap.
 
+    vertex_map_copy = copy.deepcopy(vertexMap)
+
     start = (x1, y1)
     goal = (x2, y2)
-    updatedALMap = addToMap(start, startLabel, polygons, vertexMap, adjListMap)
-    updatedALMap = addToMap(goal, goalLabel, polygons, vertexMap, updatedALMap)
+    vertex_map_copy, updatedALMap = addToMaps(start, startLabel, polygons, vertex_map_copy, adjListMap)
+    vertex_map_copy, updatedALMap = addToMaps(goal, goalLabel, polygons, vertex_map_copy, updatedALMap)
 
     return startLabel, goalLabel, updatedALMap
 
