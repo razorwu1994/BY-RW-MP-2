@@ -2,8 +2,16 @@ import sys
 import math
 import numpy as np
 import matplotlib.path as path
+from numpy import *
 import heapq as hq
 import copy
+
+def ccw(A,B,C):
+    return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
+
+# Return true if line segments AB and CD intersect
+def intersect(A,B,C,D):
+    return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
 
 def dot(vA, vB):
     return vA[0] * vB[0] + vA[1] * vB[1]
@@ -84,8 +92,7 @@ def getExtrapoledLine(p1, p2):
     p2_plus = [p2[0] + (p2[0] - p1[0]) / distance * extendLength, p2[1] + (p2[1] - p1[1]) / distance * extendLength]
     p2_minus = [p2[0] - (p2[0] - p1[0]) / distance * extendLength, p2[1] - (p2[1] - p1[1]) / distance * extendLength]
     # print plus,minus
-    return p1_plus, p1_minus, p2_plus, p2_minus
-    # print p1,path.Path(np.array([p1,p2])).contains_point(p1),p2,path.Path(np.array([p1,p2])).contains_point(p2)
+    return p1_plus,p1_minus,p2_plus,p2_minus
     # return a,b
 
 
@@ -108,7 +115,21 @@ def computeSPRoadmap(polygons, reflexVertices):
     # {1: [[2, 5.95], [3, 4.72]], 2: [[1, 5.95], [5,3.52]], ... }
     #
     # The vertex labels used here should start from 1
-    obstaclesPath = []
+    i=0
+    while i < reflexVertices.__len__():
+        vertexMap[i+1]=reflexVertices[i]
+        i+=1
+    edgeGroup=[]
+    for polygon in polygons:
+        i=0
+        while i < len(polygon):
+            if i == len(polygon)-1:
+                edgeGroup.append((polygon[i],polygon[0]))
+            else:
+                edgeGroup.append((polygon[i],polygon[i+1]))
+            i+=1
+
+    obstaclesPath=[]
     for polygon in polygons:
         polygonArray = np.array(polygon)
         polyPath = path.Path(polygonArray)
@@ -124,6 +145,7 @@ def computeSPRoadmap(polygons, reflexVertices):
             except ValueError:
                 continue
         j = 0
+        roadmapArray=[]
         while j < reflexVertices.__len__():
             if j != i:  # not connect with self
                 V_B = reflexVertices[j]
@@ -135,21 +157,33 @@ def computeSPRoadmap(polygons, reflexVertices):
                         break
                     except ValueError:
                         continue
-                a, b, c, d = getExtrapoledLine(V_A, V_B)
-                # midpoint = [(V_A[0]+V_B[0])/2.0,(V_A[1]+V_B[1])/2.0]
-                # print not obstaclesPath[V_B_OBIndex].contains_point(a),not obstaclesPath[V_B_OBIndex].contains_point(b)
-                F1 = not obstaclesPath[V_A_OBIndex].contains_point(a)
-                F2 = not obstaclesPath[V_A_OBIndex].contains_point(b)
-                F3 = not obstaclesPath[V_B_OBIndex].contains_point(c)
-                F4 = not obstaclesPath[V_B_OBIndex].contains_point(d)
-                F5 = V_A_OBIndex == V_B_OBIndex
-                F6 = abs(polygons[V_A_OBIndex].index(V_A) - polygons[V_B_OBIndex].index(V_B)) == 1
+                a,b,c,d = getExtrapoledLine(V_A,V_B)
+                F1=not obstaclesPath[V_A_OBIndex].contains_point(a)
+                F2=not obstaclesPath[V_A_OBIndex].contains_point(b)
+                F3=not obstaclesPath[V_B_OBIndex].contains_point(c)
+                F4=not obstaclesPath[V_B_OBIndex].contains_point(d)
+                F5=V_A_OBIndex==V_B_OBIndex
+                F6=abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==1
                 if F1 and F2 and F3 and F4 or F5 and F6:
-                    if F5 and F6:
-                        print "same poly"
-                    print "found line", [V_A, V_B], V_A_OBIndex, V_B_OBIndex
-            j += 1
-        i += 1
+                    F7 = False
+                    if F1 and F2 and F3 and F4:
+                                for edge in edgeGroup:
+                                    B2 = edge[0] == V_A or edge[1] == V_B or edge[1] == V_A or edge[0] == V_B
+                                    if not B2:
+                                        B1 = intersect(V_A,V_B,edge[0],edge[1])
+                                        F7= F7 or B1
+                    if not F7:
+
+                        for key in vertexMap:
+                            if vertexMap[key] == V_B:
+                                tmpkey = key
+                        distance = round(math.sqrt((V_A[0]-V_B[0])**2+(V_A[1]-V_B[1])**2),2)
+                        roadmapArray.append([tmpkey,distance])
+                        # print "found line",[V_A,V_B],V_A_OBIndex,V_B_OBIndex,roadmapArray
+            j+=1
+        adjacencyListMap[i+1]=roadmapArray
+        i+=1
+
 
     return vertexMap, adjacencyListMap
 
@@ -439,7 +473,7 @@ if __name__ == "__main__":
     print ""
 
     # Update roadmap
-    start, goal, updatedALMap = updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2)
+    start, goal, updatedALMap = updateRoadmap(polygons,vertexMap,adjListMap, x1, y1, x2, y2)
     print "Updated roadmap:"
     print str(updatedALMap)
     print ""
