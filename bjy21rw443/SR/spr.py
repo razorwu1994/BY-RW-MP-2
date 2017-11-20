@@ -539,8 +539,8 @@ def visualize(file_name, polygons, vertexMap, adjListMap, start, x1, y1, goal, x
         # Draw green line segment from inital vertex to its neighors
         for neighbor in neighbors:
             neighbor_pt = updatedVertexMap[neighbor]
-            roadmap_x = [vertex_pt[0]/10.0, neighbor_pt[0]/10.0]
-            roadmap_y = [vertex_pt[1]/10.0, neighbor_pt[1]/10.0]
+            roadmap_x = [vertex_pt[0], neighbor_pt[0]]
+            roadmap_y = [vertex_pt[1], neighbor_pt[1]]
             plt.plot(roadmap_x, roadmap_y, 'g')
 
     # Add path to plot
