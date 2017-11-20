@@ -2,9 +2,10 @@ import sys
 import math
 import numpy as np
 import matplotlib.path as path
-from numpy import *
 import heapq as hq
 import copy
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 
 def ccw(A,B,C):
     return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
@@ -434,6 +435,96 @@ def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
 
     return startLabel, goalLabel, updatedALMap
 
+'''
+Visualize the roadmap (including start and goal) in green, path computed in red
+'''
+# Set up matplotlib to create a plot with an empty square
+def setupPlot():
+    fig = plt.figure(num=None, figsize=(5, 5), dpi=120, facecolor='w', edgecolor='k')
+    plt.autoscale(False)
+    plt.axis('off')
+    ax = fig.add_subplot(1,1,1)
+    ax.set_axis_off()
+    ax.add_patch(patches.Rectangle(
+        (0,0),   # (x,y)
+        1,          # width
+        1,          # height
+        fill=False
+        ))
+    return fig, ax
+
+# Make a patch for a single pology
+def createPolygonPatch(polygon):
+    verts = []
+    codes= []
+    for v in range(0, len(polygon)):
+        xy = polygon[v]
+        verts.append((xy[0]/10., xy[1]/10.))
+        if v == 0:
+            codes.append(Path.MOVETO)
+        else:
+            codes.append(Path.LINETO)
+    verts.append(verts[0])
+    codes.append(Path.CLOSEPOLY)
+    path = Path(verts, codes)
+    patch = patches.PathPatch(path, facecolor='gray', lw=1)
+
+    return patch
+
+'''
+Make a patch for the robot
+'''
+def createPolygonPatchForRobot(polygon):
+    verts = []
+    codes= []
+    for v in range(0, len(polygon)):
+        xy = polygon[v]
+        verts.append((xy[0]/10., xy[1]/10.))
+        if v == 0:
+            codes.append(Path.MOVETO)
+        else:
+            codes.append(Path.LINETO)
+    verts.append(verts[0])
+    codes.append(Path.CLOSEPOLY)
+    path = Path(verts, codes)
+    patch = patches.PathPatch(path, facecolor='gray', lw=1)
+
+    return patch
+
+'''
+Render polygon obstacles
+'''
+def drawPolygons(polygons):
+    fig, ax = setupPlot()
+    for p in range(0, len(polygons)):
+        patch = createPolygonPatch(polygons[p])
+        ax.add_patch(patch)
+    plt.show()
+
+def visualize(polygons, adjListMap, path):
+    """
+    Plot the given roadmap and path along it
+
+    Parameters:
+    adjListMap = adjacency list mapping vertices to their outgoing edges
+    path = labels of vertices that lead from start to goal
+
+    Returns: None
+    """
+    # Separate x and y coordinates into separate lists
+    averages_x = []
+    averages_y = []
+    obs_list_x = []
+    obs_list_y = []
+
+    # Plot data
+    title = "Observations & Predicted Values"
+    plt.title(title)
+    plt.grid(True)
+    plt.plot(obs_list_x, obs_list_y, 'b', label='observations')
+    plt.plot(averages_x, averages_y, 'r', label='predictions')
+    plt.legend(loc='upper right')
+    plt.show()
 
 if __name__ == "__main__":
 
@@ -493,3 +584,5 @@ if __name__ == "__main__":
 
 
     # Extra visualization elements goes here
+    visualize(polygons, updatedALMap, path)
+
