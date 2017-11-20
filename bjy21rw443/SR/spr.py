@@ -402,6 +402,7 @@ def addToMaps(point, label, polygons, vertexMap, adjListMap):
             x2 = vertex[0]
             y2 = vertex[1]
             distance = math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
+            distance = round(distance, 2)
             newAdjListMap[vertex_label].append([label, distance])
             point_adj_list.append([vertex_label, distance])
 
