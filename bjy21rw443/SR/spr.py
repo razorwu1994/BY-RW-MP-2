@@ -1,9 +1,9 @@
 import sys
 import math
 import numpy as np
-import matplotlib.path as path
 import heapq as hq
 import copy
+from matplotlib.path import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -61,7 +61,7 @@ def findReflexiveVertices(polygons):
     for polygon in polygons:
         i = 0
         polygonArray = np.array(polygon)
-        polyPath = path.Path(polygonArray)
+        polyPath = Path(polygonArray)
         while i < len(polygon):
             if i + 1 == len(polygon):
                 line_1 = [polygon[0], polygon[i]]
@@ -133,7 +133,7 @@ def computeSPRoadmap(polygons, reflexVertices):
     obstaclesPath=[]
     for polygon in polygons:
         polygonArray = np.array(polygon)
-        polyPath = path.Path(polygonArray)
+        polyPath = Path(polygonArray)
         obstaclesPath.append(polyPath)
     i = 0
     while i < reflexVertices.__len__():
@@ -360,7 +360,7 @@ def isVisible(neighbor, point, polygons):
     close_point_y = slope * close_point_x + intercept
     close_point = (close_point_x, close_point_y)
 
-    test_path = path.Path([close_point, point], [path.Path.MOVETO, path.Path.LINETO]) # See if this segment intersects boundaries of any polygon
+    test_path = Path([close_point, point], [Path.MOVETO, Path.LINETO]) # See if this segment intersects boundaries of any polygon
 
     for polygon in polygons:
         closed_poly = copy.deepcopy(polygon)
@@ -368,12 +368,12 @@ def isVisible(neighbor, point, polygons):
         num_vertices = len(closed_poly)
 
         # Create code that draws a line around the polygon
-        codes = [path.Path.MOVETO] # Move to initial point
+        codes = [Path.MOVETO] # Move to initial point
         for i in range(num_vertices-2):
-            codes.append(path.Path.LINETO) # Every code between is LINETO (draw line from prev point to current point)
-        codes.append(path.Path.CLOSEPOLY) # Last code closes the polygon
+            codes.append(Path.LINETO) # Every code between is LINETO (draw line from prev point to current point)
+        codes.append(Path.CLOSEPOLY) # Last code closes the polygon
 
-        polygon_path = path.Path(closed_poly, codes)
+        polygon_path = Path(closed_poly, codes)
         if test_path.intersects_path(polygon_path):
             return False
     return True
@@ -438,7 +438,7 @@ def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
 '''
 Visualize the roadmap (including start and goal) in green, path computed in red
 '''
-# Set up matplotlib to create a plot with an empty square
+# Set up matplotlib to create a plot with an empty square (from visualize.py)
 def setupPlot():
     fig = plt.figure(num=None, figsize=(5, 5), dpi=120, facecolor='w', edgecolor='k')
     plt.autoscale(False)
@@ -453,7 +453,7 @@ def setupPlot():
         ))
     return fig, ax
 
-# Make a patch for a single pology
+# Make a patch for a single poly (from visualize.py)
 def createPolygonPatch(polygon):
     verts = []
     codes= []
@@ -466,14 +466,12 @@ def createPolygonPatch(polygon):
             codes.append(Path.LINETO)
     verts.append(verts[0])
     codes.append(Path.CLOSEPOLY)
-    path = Path(verts, codes)
-    patch = patches.PathPatch(path, facecolor='gray', lw=1)
+    test_path = Path(verts, codes)
+    patch = patches.PathPatch(test_path, facecolor='gray', lw=1)
 
     return patch
 
-'''
-Make a patch for the robot
-'''
+# Make a patch for the robot (from visualize.py)
 def createPolygonPatchForRobot(polygon):
     verts = []
     codes= []
@@ -486,44 +484,79 @@ def createPolygonPatchForRobot(polygon):
             codes.append(Path.LINETO)
     verts.append(verts[0])
     codes.append(Path.CLOSEPOLY)
-    path = Path(verts, codes)
-    patch = patches.PathPatch(path, facecolor='gray', lw=1)
+    test_path = Path(verts, codes)
+    patch = patches.PathPatch(test_path, facecolor='gray', lw=1)
 
     return patch
 
-'''
-Render polygon obstacles
-'''
-def drawPolygons(polygons):
-    fig, ax = setupPlot()
-    for p in range(0, len(polygons)):
-        patch = createPolygonPatch(polygons[p])
-        ax.add_patch(patch)
-    plt.show()
-
-def visualize(polygons, adjListMap, path):
+def visualize(file_name, polygons, vertexMap, adjListMap, start, x1, y1, goal, x2, y2, path):
     """
-    Plot the given roadmap and path along it
+    Plot the given roadmap, obstacles and path along it
 
     Parameters:
+    file_name = name of the file with obstacle information
+    polygons = list of polygons (their vertices in clockwise order) that act as obstacles
+    vertexMap = map from vertex labels to their coordinates
     adjListMap = adjacency list mapping vertices to their outgoing edges
+    start = label for start vertex
+    x1 = x-coordinate of start
+    y1 = y-coordiante of start
+    goal = label for goal vertex
+    x2 = x-coordinate of goal
+    y2 = y-coordinate of goal
     path = labels of vertices that lead from start to goal
 
     Returns: None
     """
-    # Separate x and y coordinates into separate lists
-    averages_x = []
-    averages_y = []
-    obs_list_x = []
-    obs_list_y = []
+    # From visualize.py
+    fig, ax = setupPlot()
+    for p in range(0, len(polygons)):
+        patch = createPolygonPatch(polygons[p])
+        ax.add_patch(patch)
+    # From visualize.py
+
+    # Create vertex map that includes start and goal vertices
+    updatedVertexMap = copy.deepcopy(vertexMap)
+    updatedVertexMap[start] = (x1, y1)
+    updatedVertexMap[goal] = (x2, y2)
+
+    # Normalize all vertex coordinates (because polygons are outputted in 1x1 box, not 10x10 box)
+    for label in updatedVertexMap.keys():
+        vertex_pt = updatedVertexMap[label]
+        updatedVertexMap[label] = [vertex_pt[0]/10.0, vertex_pt[1]/10.0]
+
+    # Add roadmap to plot
+    roadmap_x = []
+    roadmap_y = []
+    for vertex in adjListMap.keys():
+        vertex_pt = updatedVertexMap[vertex]
+        roadmap_x = []
+        roadmap_y = []
+
+        # Find all neighbors labels
+        neighbors = [x[0] for x in adjListMap[vertex]]
+
+        # Draw green line segment from inital vertex to its neighors
+        for neighbor in neighbors:
+            neighbor_pt = updatedVertexMap[neighbor]
+            roadmap_x = [vertex_pt[0]/10.0, neighbor_pt[0]/10.0]
+            roadmap_y = [vertex_pt[1]/10.0, neighbor_pt[1]/10.0]
+            plt.plot(roadmap_x, roadmap_y, 'g')
+
+    # Add path to plot
+    path_x = []
+    path_y = []
+
+    for label in path:
+        pt = updatedVertexMap[label]
+        path_x.append(pt[0])
+        path_y.append(pt[1])
+    plt.plot(path_x, path_y, 'r')
 
     # Plot data
-    title = "Observations & Predicted Values"
+    title = "Shortest Roadmap ({})".format(file_name)
     plt.title(title)
     plt.grid(True)
-    plt.plot(obs_list_x, obs_list_y, 'b', label='observations')
-    plt.plot(averages_x, averages_y, 'r', label='predictions')
-    plt.legend(loc='upper right')
     plt.show()
 
 if __name__ == "__main__":
@@ -582,7 +615,6 @@ if __name__ == "__main__":
     print str(path)
     print "Final path length:" + str(length)
 
-
     # Extra visualization elements goes here
-    visualize(polygons, updatedALMap, path)
+    visualize(filename, polygons, vertexMap, updatedALMap, start, x1, y1, goal, x2, y2, path)
 
