@@ -351,13 +351,20 @@ def isVisible(neighbor, point, polygons):
     # Find line between the 2 points
     x1, y1 = point
     x2, y2 = neighbor
-    slope = (y2 - y1 * 1.0)/(x2 - x1 * 1.0)
-    intercept = y2 - slope * x2
-
-    # Find point right before the neighbor
     closeness = 0.999999 # Percentage of how far (with respect to distance to neighbor) new point is from the given point
-    close_point_x = x1 + (x2 - x1) * closeness
-    close_point_y = slope * close_point_x + intercept
+
+    # Exception if a vertical line is needed, determine close point based on y-values instead
+    if x1 == x2:
+        close_point_x = x1
+        close_point_y = y1 + (y2 - y1) * closeness
+    else:
+        slope = (y2 - y1 * 1.0)/(x2 - x1 * 1.0)
+        intercept = y2 - slope * x2
+
+        # Find point right before the neighbor
+        close_point_x = x1 + (x2 - x1) * closeness
+        close_point_y = slope * close_point_x + intercept
+
     close_point = (close_point_x, close_point_y)
 
     test_path = Path([close_point, point], [Path.MOVETO, Path.LINETO]) # See if this segment intersects boundaries of any polygon
