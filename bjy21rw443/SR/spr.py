@@ -312,11 +312,34 @@ def isVisible(neighbor, point, polygons):
     :param polygons: list of arrays which represent coordinates in clockwise direction forming polygons
     :return: True if neighbor is visible from point, False otherwise
     """
-    test_segment = path.Path([neighbor, point]) # See if this segment intersects boundaries of any polygon
+    # Find path that gets very close to, but does not touch, the neighbor point
+    # Find line between the 2 points
+    x1, y1 = point
+    x2, y2 = neighbor
+    slope = (y2 - y1 * 1.0)/(x2 - x1 * 1.0)
+    intercept = y2 - slope * x2
+
+    # Find point right before the neighbor
+    closeness = 0.999999 # Percentage of how far (with respect to distance to neighbor) new point is from the given point
+    close_point_x = x1 + (x2 - x1) * closeness
+    close_point_y = slope * close_point_x + intercept
+    close_point = (close_point_x, close_point_y)
+
+    test_path = path.Path([close_point, point], [path.Path.MOVETO, path.Path.LINETO]) # See if this segment intersects boundaries of any polygon
 
     for polygon in polygons:
-        polygon_path = path.Path(polygon)
-        if test_segment.intersects_path(polygon_path):
+        closed_poly = copy.deepcopy(polygon)
+        closed_poly.append(closed_poly[0]) # To loop back to the beginning vertex and close the path
+        num_vertices = len(closed_poly)
+
+        # Create code that draws a line around the polygon
+        codes = [path.Path.MOVETO] # Move to initial point
+        for i in range(num_vertices-2):
+            codes.append(path.Path.LINETO) # Every code between is LINETO (draw line from prev point to current point)
+        codes.append(path.Path.CLOSEPOLY) # Last code closes the polygon
+
+        polygon_path = path.Path(closed_poly, codes)
+        if test_path.intersects_path(polygon_path):
             return False
     return True
 
