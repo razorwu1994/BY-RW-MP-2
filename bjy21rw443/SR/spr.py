@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.path as path
 from numpy import *
 import heapq as hq
-
+import copy
 
 def ccw(A,B,C):
     return (C[1]-A[1]) * (B[0]-A[0]) > (B[1]-A[1]) * (C[0]-A[0])
@@ -51,8 +51,6 @@ def ang(lineA, lineB, obtruct):
 '''
 Report reflexive vertices
 '''
-
-
 def findReflexiveVertices(polygons):
     vertices = []
     # Your code goes here
@@ -101,8 +99,6 @@ def getExtrapoledLine(p1, p2):
 '''
 Compute the roadmap graph
 '''
-
-
 def computeSPRoadmap(polygons, reflexVertices):
     vertexMap = dict()
     adjacencyListMap = dict()
@@ -195,7 +191,6 @@ def computeSPRoadmap(polygons, reflexVertices):
 '''
 Perform uniform cost search
 '''
-
 class Node:
     """
     Represents a node in the graph
@@ -342,6 +337,77 @@ def uniformCostSearch(adjListMap, start, goal):
 '''
 Augment roadmap to include start and goal
 '''
+def isVisible(neighbor, point, polygons):
+    """
+    Check if neighbor is visible from point based on the given polygons
+
+    :param neighbor: see if this neighbor is visible from point
+    :param point: point to check visibility from
+    :param polygons: list of arrays which represent coordinates in clockwise direction forming polygons
+    :return: True if neighbor is visible from point, False otherwise
+    """
+    # Find path that gets very close to, but does not touch, the neighbor point
+    # Find line between the 2 points
+    x1, y1 = point
+    x2, y2 = neighbor
+    slope = (y2 - y1 * 1.0)/(x2 - x1 * 1.0)
+    intercept = y2 - slope * x2
+
+    # Find point right before the neighbor
+    closeness = 0.999999 # Percentage of how far (with respect to distance to neighbor) new point is from the given point
+    close_point_x = x1 + (x2 - x1) * closeness
+    close_point_y = slope * close_point_x + intercept
+    close_point = (close_point_x, close_point_y)
+
+    test_path = path.Path([close_point, point], [path.Path.MOVETO, path.Path.LINETO]) # See if this segment intersects boundaries of any polygon
+
+    for polygon in polygons:
+        closed_poly = copy.deepcopy(polygon)
+        closed_poly.append(closed_poly[0]) # To loop back to the beginning vertex and close the path
+        num_vertices = len(closed_poly)
+
+        # Create code that draws a line around the polygon
+        codes = [path.Path.MOVETO] # Move to initial point
+        for i in range(num_vertices-2):
+            codes.append(path.Path.LINETO) # Every code between is LINETO (draw line from prev point to current point)
+        codes.append(path.Path.CLOSEPOLY) # Last code closes the polygon
+
+        polygon_path = path.Path(closed_poly, codes)
+        if test_path.intersects_path(polygon_path):
+            return False
+    return True
+
+def addToMap(point, label, polygons, vertexMap, adjListMap):
+    """
+    Add a given point to the vertexMap and adjListMap
+
+    Parameters:
+    :param point: point to add to the adjListMap
+    :param label: label for the given point
+    :param polygons: list of list of clockwise coordinates or a polygon
+    :param vertexMap: map of vertex labels to their coordinates
+    :param adjListMap: adjacency list for the graph
+
+    :return: updated adjListMap
+    """
+    newAdjListMap = copy.deepcopy(adjListMap)
+    point_adj_list = []
+    x1 = point[0]
+    y1 = point[1]
+
+    # Add edges between given point and other visible points
+    for vertex_label in newAdjListMap.keys():
+        vertex = vertexMap[vertex_label]
+        if isVisible(vertex, point, polygons):
+            x2 = vertex[0]
+            y2 = vertex[1]
+            distance = math.sqrt(math.pow(x2 - x1, 2) + math.pow(y2 - y1, 2))
+            newAdjListMap[vertex_label].append(label, distance)
+            point_adj_list.append([vertex_label, distance])
+
+    newAdjListMap[label] = point_adj_list
+    return newAdjListMap
+
 def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     updatedALMap = dict()
     startLabel = 0
@@ -354,11 +420,18 @@ def updateRoadmap(polygons, vertexMap, adjListMap, x1, y1, x2, y2):
     # roadmap. Note that what you do here is similar to
     # when you construct the roadmap.
 
+    start = (x1, y1)
+    goal = (x2, y2)
+    updatedALMap = addToMap(start, startLabel, polygons, vertexMap, adjListMap)
+    updatedALMap = addToMap(goal, goalLabel, polygons, vertexMap, updatedALMap)
+
     return startLabel, goalLabel, updatedALMap
 
+
 if __name__ == "__main__":
-    # Retrieve file name for input data
-    if(len(sys.argv) < 6):
+
+    # Retrive file name for input data
+    if (len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
         exit()
 
