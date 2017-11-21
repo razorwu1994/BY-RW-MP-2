@@ -496,6 +496,50 @@ def createPolygonPatchForRobot(polygon):
 
     return patch
 
+def plotRoadmap(vertexMap, adjListMap):
+    """
+    Plot roadmap in green
+
+    :param vertexMap: mapping from vertex label to its coordinates
+    :param adjListMap: mapping from vertex label to its edges [<neighbor_label>, <distance>]
+    :return: None
+    """
+    roadmap_x = []
+    roadmap_y = []
+    for vertex in adjListMap.keys():
+        vertex_pt = vertexMap[vertex]
+        roadmap_x = []
+        roadmap_y = []
+
+        # Find all neighbors labels
+        neighbors = [x[0] for x in adjListMap[vertex]]
+
+        # Draw green line segment from inital vertex to its neighors
+        for neighbor in neighbors:
+            neighbor_pt = vertexMap[neighbor]
+            roadmap_x = [vertex_pt[0], neighbor_pt[0]]
+            roadmap_y = [vertex_pt[1], neighbor_pt[1]]
+            plt.plot(roadmap_x, roadmap_y, 'g')
+
+def plotPath(vertexMap, path):
+    """
+    Plot path in red. If there is no path, plot nothing
+    :param vertexMap: mapping from vertex to coordinates
+    :return: None
+    """
+    if path is None:
+        return
+
+    # Add path to plot
+    path_x = []
+    path_y = []
+
+    for label in path:
+        pt = vertexMap[label]
+        path_x.append(pt[0])
+        path_y.append(pt[1])
+    plt.plot(path_x, path_y, 'r')
+
 def visualize(file_name, polygons, vertexMap, adjListMap, start, x1, y1, goal, x2, y2, path):
     """
     Plot the given roadmap, obstacles and path along it
@@ -532,33 +576,8 @@ def visualize(file_name, polygons, vertexMap, adjListMap, start, x1, y1, goal, x
         vertex_pt = updatedVertexMap[label]
         updatedVertexMap[label] = [vertex_pt[0]/10.0, vertex_pt[1]/10.0]
 
-    # Add roadmap to plot
-    roadmap_x = []
-    roadmap_y = []
-    for vertex in adjListMap.keys():
-        vertex_pt = updatedVertexMap[vertex]
-        roadmap_x = []
-        roadmap_y = []
-
-        # Find all neighbors labels
-        neighbors = [x[0] for x in adjListMap[vertex]]
-
-        # Draw green line segment from inital vertex to its neighors
-        for neighbor in neighbors:
-            neighbor_pt = updatedVertexMap[neighbor]
-            roadmap_x = [vertex_pt[0], neighbor_pt[0]]
-            roadmap_y = [vertex_pt[1], neighbor_pt[1]]
-            plt.plot(roadmap_x, roadmap_y, 'g')
-
-    # Add path to plot
-    path_x = []
-    path_y = []
-
-    for label in path:
-        pt = updatedVertexMap[label]
-        path_x.append(pt[0])
-        path_y.append(pt[1])
-    plt.plot(path_x, path_y, 'r')
+    plotRoadmap(updatedVertexMap, adjListMap)
+    plotPath(updatedVertexMap, path)
 
     # Plot data
     title = "Shortest Roadmap ({})".format(file_name)
@@ -567,7 +586,7 @@ def visualize(file_name, polygons, vertexMap, adjListMap, start, x1, y1, goal, x
     plt.show()
 
 if __name__ == "__main__":
-
+    """ Testing
     # Retrive file name for input data
     if (len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
@@ -578,6 +597,12 @@ if __name__ == "__main__":
     y1 = float(sys.argv[3])
     x2 = float(sys.argv[4])
     y2 = float(sys.argv[5])
+    """
+    filename = "env_03.txt"
+    x1 = 0
+    y1 = 0
+    x2 = 10
+    y2 = 10
 
     # Read data and parse polygons
     lines = [line.rstrip('\n') for line in open(filename)]
