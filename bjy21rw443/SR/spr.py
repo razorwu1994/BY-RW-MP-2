@@ -48,7 +48,17 @@ def ang(lineA, lineB, obtruct):
     else:
         return 360 - ret, [lineA[0][0], lineA[0][1]]
 
+def isBetween(a, b, c):
+    crossproduct = (c[1] - a[1]) * (b[0] - a[0]) - (c[0] - a[0]) * (b[1] - a[1])
+    if abs(crossproduct) > sys.float_info.epsilon : return False   # (or != 0 if using integers)
 
+    dotproduct = (c[0] - a[0]) * (b[0] - a[0]) + (c[1] - a[1])*(b[1] - a[1])
+    if dotproduct < 0 : return False
+
+    squaredlengthba = (b[0] - a[0])*(b[0] - a[0]) + (b[1] - a[1])*(b[1] - a[1])
+    if dotproduct > squaredlengthba: return False
+
+    return True
 '''
 Report reflexive vertices
 '''
@@ -75,8 +85,13 @@ def findReflexiveVertices(polygons):
                 line_2 = [polygon[i + 1], polygon[i + 2]]
             midpoint = [(line_2[1][0] + line_1[1][0]) / 2.0, (line_2[1][1] + line_1[1][1]) / 2.0]
             i += 1
-            verticesGroup.append(ang(line_1, line_2, not polyPath.contains_point(midpoint)))
+            # if not polyPath.contains_point(midpoint):
+            #     print "isbtw",
+            #     print midpoint
 
+            verticesGroup.append(ang(line_1, line_2, not polyPath.contains_point(midpoint) and not isBetween(line_1[1],line_2[1],midpoint)))
+
+    print verticesGroup
     for vertex in list(filter(lambda x: x[0] > 180, verticesGroup)):
         vertices.append(vertex[1])
     return vertices
