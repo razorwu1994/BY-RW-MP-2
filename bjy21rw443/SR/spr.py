@@ -586,7 +586,6 @@ def visualize(file_name, polygons, vertexMap, adjListMap, start, x1, y1, goal, x
     plt.show()
 
 if __name__ == "__main__":
-    """ Testing
     # Retrive file name for input data
     if (len(sys.argv) < 6):
         print "Five arguments required: python spr.py [env-file] [x1] [y1] [x2] [y2]"
@@ -597,12 +596,6 @@ if __name__ == "__main__":
     y1 = float(sys.argv[3])
     x2 = float(sys.argv[4])
     y2 = float(sys.argv[5])
-    """
-    filename = "env_03.txt"
-    x1 = 0
-    y1 = 0
-    x2 = 10
-    y2 = 10
 
     # Read data and parse polygons
     lines = [line.rstrip('\n') for line in open(filename)]
