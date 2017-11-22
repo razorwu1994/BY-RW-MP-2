@@ -91,7 +91,7 @@ def findReflexiveVertices(polygons):
 
             verticesGroup.append(ang(line_1, line_2, not polyPath.contains_point(midpoint) and not isBetween(line_1[1],line_2[1],midpoint)))
 
-    print verticesGroup
+    # print verticesGroup
     for vertex in list(filter(lambda x: x[0] > 180, verticesGroup)):
         vertices.append(vertex[1])
     return vertices
@@ -103,10 +103,16 @@ def getExtrapoledLine(p1, p2):
     yDiff = p2[1] - p1[1]
     distance = math.sqrt(xDiff ** 2 + yDiff ** 2)
     extendLength = 0.05
-    p1_plus = [p1[0] + (p2[0] - p1[0]) / distance * extendLength, p1[1] + (p2[1] - p1[1]) / distance * extendLength]
-    p1_minus = [p1[0] - (p2[0] - p1[0]) / distance * extendLength, p1[1] - (p2[1] - p1[1]) / distance * extendLength]
-    p2_plus = [p2[0] + (p2[0] - p1[0]) / distance * extendLength, p2[1] + (p2[1] - p1[1]) / distance * extendLength]
-    p2_minus = [p2[0] - (p2[0] - p1[0]) / distance * extendLength, p2[1] - (p2[1] - p1[1]) / distance * extendLength]
+    if distance!=0:
+        p1_plus = [p1[0] + (p2[0] - p1[0]) / distance * extendLength, p1[1] + (p2[1] - p1[1]) / distance * extendLength]
+        p1_minus = [p1[0] - (p2[0] - p1[0]) / distance * extendLength, p1[1] - (p2[1] - p1[1]) / distance * extendLength]
+        p2_plus = [p2[0] + (p2[0] - p1[0]) / distance * extendLength, p2[1] + (p2[1] - p1[1]) / distance * extendLength]
+        p2_minus = [p2[0] - (p2[0] - p1[0]) / distance * extendLength, p2[1] - (p2[1] - p1[1]) / distance * extendLength]
+    else:
+        p1_plus = p1
+        p1_minus =p1
+        p2_plus = p2
+        p2_minus =p2
     # print plus,minus
     return p1_plus,p1_minus,p2_plus,p2_minus
     # return a,b
@@ -170,16 +176,22 @@ def computeSPRoadmap(polygons, reflexVertices):
                     try:
                         k = polygon.index(V_B)
                         V_B_OBIndex = polygons.index(polygon)
+                        if polygons[V_A_OBIndex].index(V_B):
+                            V_B_OBIndex = V_A_OBIndex
                         break
                     except ValueError:
                         continue
+
                 a,b,c,d = getExtrapoledLine(V_A,V_B)
                 F1=not obstaclesPath[V_A_OBIndex].contains_point(a)
                 F2=not obstaclesPath[V_A_OBIndex].contains_point(b)
                 F3=not obstaclesPath[V_B_OBIndex].contains_point(c)
                 F4=not obstaclesPath[V_B_OBIndex].contains_point(d)
                 F5=V_A_OBIndex==V_B_OBIndex
-                F6=abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==1
+                F6=abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==1 or abs(polygons[V_A_OBIndex].index(V_A)-polygons[V_B_OBIndex].index(V_B))==len(polygons[V_A_OBIndex])-1
+                # if V_A ==[5.0,5.0] and V_B == [0.0,10.0] or V_B ==[5.0,5.0] and V_A == [0.0,10.0]:
+                #     print F1,F2,F3,F4,F5,F6,V_A_OBIndex,V_B_OBIndex,V_A,V_B
+                #     print polygons[V_A_OBIndex].index(V_A),polygons[V_B_OBIndex].index(V_B)
                 if F1 and F2 and F3 and F4 or F5 and F6:
                     F7 = False
                     if F1 and F2 and F3 and F4:
