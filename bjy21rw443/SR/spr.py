@@ -1,5 +1,6 @@
 import sys
 import math
+import itertools
 import numpy as np
 import heapq as hq
 import copy
@@ -260,6 +261,79 @@ class Node:
 
         return "({0}, parent={1}, f={2})".format(self.label, parent_str, self.f)
 
+    def __hash__(self):
+        """
+        Hash this node
+
+        :return: for node i, hash its label, i
+        """
+        return hash(self.label)
+
+REMOVED = '<removed-cell>'  # placeholder for a removed cell
+
+class PriorityQueue:
+    """
+    Priority queue using heapq as a min binary heap.
+
+    Attributes:
+    heap = list of entries arranged in a heap
+    entry_finder = mapping of nodes to entries
+    counter = unique sequence count
+    size = # of non-removed nodes in the queue
+    """
+
+    def __init__(self):
+        self.pq = []
+        self.entry_finder = {}
+        self.size = 0
+        self.counter = itertools.count()
+
+    def add_node(self, node, priority=0):
+        """
+        Add a new node or update the priority of an existing node
+
+        :param node: node to add to the pq
+        :param priority: priority of the given node, default is 0
+        :return: None
+        """
+        if node in self.entry_finder:
+            self.remove_node(node)
+        count = next(self.counter)
+        entry = [priority, count, node]
+        self.entry_finder[node] = entry
+        hq.heappush(self.pq, entry)
+        self.size += 1
+
+    def remove_node(self, node):
+        """
+        Mark an existing node as REMOVED.  Raise KeyError if not found.
+
+        :param node: node to remove from the heap
+        :return: None
+        """
+        entry = self.entry_finder.pop(node)
+        entry[-1] = REMOVED
+        self.size -= 1
+
+    def pop_node(self):
+        """
+        Remove and return the lowest priority node. Raise KeyError if empty.
+
+        :return: node with the lowest priority
+        """
+        while self.pq:
+            priority, count, node = hq.heappop(self.pq)
+            if node is not REMOVED:
+                self.size -= 1
+                del self.entry_finder[node]
+                return node
+        raise KeyError('pop from an empty priority queue')
+
+    def __len__(self):
+        return self.size
+
+    def __contains__(self, node):
+        return True if node in self.entry_finder else False
 
 def retrieve_path(start, goal, nodes_dict):
     """
@@ -301,11 +375,11 @@ def update_vertex(s, neighbor_node, cost, fringe):
     if total_cost < neighbor_node.g:
         neighbor_node.g = total_cost
         neighbor_node.parent = s
-        if (neighbor_node.f, neighbor_node) in fringe:
-            fringe.remove((neighbor_node.f, neighbor_node))  # Remove neighbor (reorganize base on new f)
+        if neighbor_node in fringe:
+            fringe.remove_node(neighbor_node)  # Remove neighbor (reorganize base on new f)
 
         neighbor_node.f = neighbor_node.g
-        hq.heappush(fringe, (neighbor_node.f, neighbor_node))  # Insert neighbor back into fringe
+        fringe.add_node(neighbor_node)  # Insert neighbor back into fringe
 
 
 def uniformCostSearch(adjListMap, start, goal):
@@ -333,12 +407,12 @@ def uniformCostSearch(adjListMap, start, goal):
     start_node.g = 0
     start_node.f = start_node.g
     start_node.parent = start
-    fringe = []
-    hq.heappush(fringe, (start_node.f, start_node))  # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
+    fringe = PriorityQueue()
+    fringe.add_node(start_node, start_node.f)  # Insert start to fringe, need to use a 2-tuple so the heapq orders based on f-value
     closed = []  # closed := empty set
 
     while len(fringe) != 0:  # Checking that fringe is nonempty
-        (f, s) = hq.heappop(fringe)
+        s = fringe.pop_node()
         if s.label == goal:
             path = retrieve_path(start, goal, nodes_dict)  # Get path from start to goal
             pathLength = nodes_dict[goal].f
